@@ -1,24 +1,61 @@
+import psutil
+import subprocess
+
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QApplication, QVBoxLayout, QLineEdit, QTextBrowser, QWidget, \
     QMessageBox
-from PyQt5.QtCore import QThread, pyqtSignal
 
 from loadingLbl import LoadingLabel
 from script import install_audio, remove_trim
-from transcribe_audio import transcribe_audio
 
-class Thread(QThread):
-    transcribeFinished = pyqtSignal(str)
+
+class Thread1(QThread):
+    audioReadyFinished = pyqtSignal(str)
 
     def __init__(self, url):
-        super(Thread, self).__init__()
+        super(Thread1, self).__init__()
         self.__url = url
 
     def run(self):
         try:
             downloaded_file = install_audio(self.__url)
             dst_filename = remove_trim(downloaded_file)
-            result = transcribe_audio(dst_filename)
-            self.transcribeFinished.emit(result)
+            self.audioReadyFinished.emit(dst_filename)
+        except Exception as e:
+            raise Exception(e)
+
+class Thread2(QThread):
+    updated = pyqtSignal(str)
+    stopped = pyqtSignal()
+
+    def __init__(self, command):
+        super(Thread2, self).__init__()
+        self.__command = command
+        self.__process = ''
+        self.__stopped = False
+
+    def run(self):
+        try:
+            process = subprocess.Popen(
+                self.__command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            self.__process = psutil.Process(process.pid)
+
+            while True:
+                if self.__stopped:
+                    self.__stopped = False
+                    self.stopped.emit()
+                    return
+                realtime_output = process.stdout.readline()
+                if realtime_output == '' and process.poll() is not None:
+                    break
+                if realtime_output:
+                    self.updated.emit(realtime_output.strip())
         except Exception as e:
             raise Exception(e)
 
@@ -58,10 +95,10 @@ class MainWindow(QMainWindow):
     def __run(self):
         try:
             url = self.__lineEdit.text().strip()
-            self.__t = Thread(url)
+            self.__t = Thread1(url)
             self.__t.started.connect(self.__started)
-            self.__t.transcribeFinished.connect(self.__transcribeFinished)
-            self.__t.finished.connect(self.__finished)
+            self.__t.audioReadyFinished.connect(self.__audioReadyFinished)
+            self.__t.finished.connect(self.__runSecondThread)
             self.__t.start()
         except Exception as e:
             QMessageBox.critical(self, 'Error', str(e))
@@ -70,8 +107,18 @@ class MainWindow(QMainWindow):
         self.__loadingLbl.start()
         self.__btn.setEnabled(False)
 
-    def __transcribeFinished(self, result_text):
-        self.__browser.append(result_text)
+    def __audioReadyFinished(self, dst_filename):
+        self.__dst_filename = dst_filename
+
+    def __runSecondThread(self):
+        self.__t = Thread2(f'python transcribe_audio.py "{self.__dst_filename}"')
+        self.__t.started.connect(self.__started)
+        self.__t.updated.connect(self.__updated)
+        self.__t.finished.connect(self.__finished)
+        self.__t.start()
+
+    def __updated(self, text):
+        self.__browser.append(text)
 
     def __finished(self):
         self.__loadingLbl.stop()

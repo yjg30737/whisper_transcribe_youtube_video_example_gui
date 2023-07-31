@@ -3,6 +3,9 @@ import subprocess
 
 from pytube import YouTube
 
+import whisper
+
+model = whisper.load_model("base")
 
 def install_audio(youtube_video_url):
     youtube_video_content = YouTube(youtube_video_url)
@@ -34,3 +37,7 @@ def remove_trim(downloaded_file):
     return dst_filename
 
 url = 'https://www.youtube.com/watch?v=3haowENzdLo'
+
+def transcribe_audio(dst_filename):
+    result = model.transcribe(dst_filename, verbose=True)
+    return result['text']
