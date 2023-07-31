@@ -17,3 +17,6 @@ I refacotored a little and make it easier to understand :)
 1. git clone ~
 2. pip install -r requirements.txt
 3. python main.py
+
+## Preview
+![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/37762c36-e3e9-44f5-9db3-336459ac2e4d)
