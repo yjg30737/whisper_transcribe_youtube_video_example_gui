@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QApplication, QVBoxLayout,
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from loadingLbl import LoadingLabel
-from script import installAudio, removeTrim, transcribeAudio
-
+from script import install_audio, remove_trim
+from transcribe_audio import transcribe_audio
 
 class Thread(QThread):
     transcribeFinished = pyqtSignal(str)
@@ -15,9 +15,9 @@ class Thread(QThread):
 
     def run(self):
         try:
-            downloaded_file = installAudio(self.__url)
-            dst_filename = removeTrim(downloaded_file)
-            result = transcribeAudio(dst_filename)
+            downloaded_file = install_audio(self.__url)
+            dst_filename = remove_trim(downloaded_file)
+            result = transcribe_audio(dst_filename)
             self.transcribeFinished.emit(result)
         except Exception as e:
             raise Exception(e)

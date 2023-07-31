@@ -1,12 +1,10 @@
 import os
 import subprocess
-import whisper
 
 from pytube import YouTube
 
-model = whisper.load_model("base")
 
-def installAudio(youtube_video_url):
+def install_audio(youtube_video_url):
     youtube_video_content = YouTube(youtube_video_url)
 
     directory = 'content'
@@ -22,7 +20,7 @@ def installAudio(youtube_video_url):
 
     return downloaded_file
 
-def removeTrim(downloaded_file):
+def remove_trim(downloaded_file):
     base_filename = os.path.splitext(os.path.basename(downloaded_file))[0]
     dst_filename = os.path.join(os.path.dirname(downloaded_file), f'{base_filename}(filtered).mp4')
     # trim file with ffmpeg
@@ -34,10 +32,5 @@ def removeTrim(downloaded_file):
     except subprocess.CalledProcessError as e:
         print("Error executing FFmpeg command:", e)
     return dst_filename
-
-def transcribeAudio(dst_filename):
-    result = model.transcribe(dst_filename, verbose=True)
-    return result['text']
-
 
 url = 'https://www.youtube.com/watch?v=3haowENzdLo'
