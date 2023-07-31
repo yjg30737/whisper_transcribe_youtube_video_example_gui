@@ -1,4 +1,3 @@
-![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/02f6148d-d547-4832-b849-8c2e3cd9da99)# whisper_transcribe_youtube_video_example_gui
 GUI Showcase of using Whisper to transcribe and analyze Youtube video
 
 This GUI is based on this <a href="https://analyzingalpha.com/openai-whisper-python-tutorial">article</a>.
