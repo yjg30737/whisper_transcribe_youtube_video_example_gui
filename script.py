@@ -36,8 +36,6 @@ def remove_trim(downloaded_file):
         print("Error executing FFmpeg command:", e)
     return dst_filename
 
-url = 'https://www.youtube.com/watch?v=3haowENzdLo'
-
 def transcribe_audio(dst_filename):
     result = model.transcribe(dst_filename, verbose=True)
     return result['text']
