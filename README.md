@@ -1,13 +1,20 @@
 GUI Showcase of using Whisper to transcribe and analyze Youtube video
 
-This GUI is based on this <a href="https://analyzingalpha.com/openai-whisper-python-tutorial">article</a>.
+This GUI is based on this <a href="https://analyzingalpha.com/openai-whisper-python-tutorial">article</a>. But this article is quite old in 2024.
 
-I refacotored a little and make it easier to understand :)
+So i've changed a lot!
 
 ## Requirements (Package)
 * PyQt5>=5.14
+* openai
+* python-docx
+* psutil
 * pytube - to install youtube video as an audio
+* pydub
+* requests
+### Legacy
 * openai-whisper - to extract the language and transcribe the content of the audio
+* numpy<2.0.0
 
 ## Requirements (Software)
 * ffmpeg (you can install this with choco install ffmpeg in Windows and sudo apt-get ffmpeg in linux)
@@ -16,6 +23,9 @@ I refacotored a little and make it easier to understand :)
 1. git clone ~
 2. pip install -r requirements.txt
 3. python main.py
+
+### You have to do this if you already have the same exact Youtube video !
+![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/9c4f0d88-c3ec-41cf-9c26-aadb9ef628fc)
 
 ## How it works
 First, This app will download the Youtube video as 128kb audio file.
