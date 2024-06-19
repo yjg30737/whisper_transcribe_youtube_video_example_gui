@@ -39,4 +39,7 @@ Finally this app will transcribe the audio as verbose format, stream the output 
 I use <a href="https://www.youtube.com/watch?v=3haowENzdLo">this video file</a> as a sample. This is good sample video called "Microsoft (MSFT) Q4 2022 Earnings Call" which length is about 1 and a half hour
 
 ## Preview
-![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/37762c36-e3e9-44f5-9db3-336459ac2e4d)
+### New version
+![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/135c4aa2-d012-470b-b3cd-105efa050a68)
+### Legacy
+It only works in CUI for some reasons.
