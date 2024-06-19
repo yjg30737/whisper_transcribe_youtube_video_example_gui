@@ -1,11 +1,106 @@
 import os
+import requests
 import subprocess
+from pathlib import Path
 
+from openai import OpenAI
+from pydub import AudioSegment
 from pytube import YouTube
 
-import whisper
 
-model = whisper.load_model("base")
+def split_the_audio(audio_file_path, split_duration=600000):
+    audio = AudioSegment.from_file(audio_file_path)
+    split_audio = []
+    dirname = Path(audio_file_path).parent
+    for i, j in enumerate(range(0, len(audio), split_duration)):
+        _audio = audio[j:j + split_duration]
+        filename = os.path.join(dirname, f'split_audio_{i}.mp3')
+        _audio.export(filename, format='mp3')
+        split_audio.append(filename)
+
+    return split_audio
+
+class GPTTranscribeWrapper:
+    def __init__(self, api_key=None, db_url='sqlite:///conv.db'):
+        super().__init__()
+        self._client = None
+        # Initialize OpenAI client
+        self._is_available = True if api_key else False
+        if api_key and self._is_available:
+            self.set_api(api_key)
+        # self._db_handler = ''
+        # self.init_db(db_url)
+
+    def is_available(self):
+        return self._is_available
+
+    def set_api(self, api_key):
+        self._api_key = api_key
+        self._client = OpenAI(api_key=api_key)
+        os.environ['OPENAI_API_KEY'] = api_key
+
+    def request_and_set_api(self, api_key):
+        try:
+            response = requests.get('https://api.openai.com/v1/models', headers={'Authorization': f'Bearer {api_key}'})
+            self._is_available = response.status_code == 200
+            if self._is_available:
+                self.set_api(api_key)
+            return self._is_available
+        except Exception as e:
+            print(e)
+            return False
+
+    def transcribe_audio(self, audio_file_path, model='whisper-1', response_format=None, timestamp_granularities=None):
+        args = {
+            'model': model,
+        }
+
+        if response_format:
+            args['response_format'] = response_format
+        if timestamp_granularities:
+            args['timestamp_granularities'] = timestamp_granularities
+
+        result_obj_lst = []
+
+        next_starting_point = 0
+        for result_audio_file_path in split_the_audio(audio_file_path):
+            result_obj = {}
+            with open(result_audio_file_path, 'rb') as audio_file:
+                args['file'] = audio_file
+                # print(split_the_audio(audio_file_path))
+                # Get format of the file
+                # print(type(args['file']))
+
+                transcription = self._client.audio.transcriptions.create(
+                    **args,
+                )
+
+                segments = transcription.segments
+
+                language = transcription.language
+                # print(f"Transcription language: {language}")
+                result_obj['language'] = language
+
+                duration = transcription.duration
+                # print(f"Transcription duration: {duration}")
+                result_obj['duration'] = duration
+                result_obj['segments'] = []
+
+                for segment in segments:
+                    # [start --> end] text format
+                    # segment['start'], segment['end'] should be 0.00 format
+                    segment_obj = {
+                        'start': round(segment['start']+next_starting_point, 2),
+                        'end': round(segment['end']+next_starting_point, 2),
+                        'text': segment['text']
+                    }
+                    result_obj['segments'].append(segment_obj)
+                    # print(f"[{round(segment['start'], 2)} --> {round(segment['end'], 2)}] {segment['text']}")
+                next_starting_point += result_obj['segments'][-1]['end']
+                print('next_starting_point:', next_starting_point)
+            result_obj_lst.append(result_obj)
+            Path(result_audio_file_path).unlink(missing_ok=True)
+        return result_obj_lst
 
 def install_audio(youtube_video_url):
     youtube_video_content = YouTube(youtube_video_url)
@@ -36,6 +131,23 @@ def remove_trim(downloaded_file):
         print("Error executing FFmpeg command:", e)
     return dst_filename
 
-def transcribe_audio(dst_filename):
-    result = model.transcribe(dst_filename, verbose=True)
-    return result['text']
+# CUI usage
+
+# wrapper = GPTTranscribeWrapper(api_key=API_KEY)
+
+# filename = 'content/Microsoft (MSFT) Q4 2022 Earnings Call(filtered).mp4'
+# print(wrapper.transcribe_audio(filename, response_format='verbose_json', timestamp_granularities=['segment']), end='\n\n')
+
+# dirname = Path('examples')
+# filenames = [str(file) for file in dirname.iterdir() if file.is_file()]
+# for filename in filenames:
+#     result_obj_lst = wrapper.transcribe_audio(filename, response_format='verbose_json', timestamp_granularities=['segment'])
+#     for result_obj in result_obj_lst:
+#         print(f"Transcription language: {result_obj['language']}")
+#         print(f"Transcription duration: {result_obj['duration']}")
+#         segments = result_obj['segments']
+#         for segment in segments:
+#             start = segment['start']
+#             end = segment['end']
+#             text = segment['text']
+#             print(f"[{start} --> {end}] {text}")
