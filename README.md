@@ -18,6 +18,7 @@ So i've changed a lot!
 
 ## Requirements (Software)
 * ffmpeg (you can install this with choco install ffmpeg in Windows and sudo apt-get ffmpeg in linux)
+- Actually the app includes ffmpeg.exe, so you don't need to download this.
 
 ## How to Run
 1. git clone ~
@@ -40,6 +41,7 @@ I use <a href="https://www.youtube.com/watch?v=3haowENzdLo">this video file</a> 
 
 ## Preview
 ### New version
-![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/135c4aa2-d012-470b-b3cd-105efa050a68)
+![image](https://github.com/yjg30737/whisper_transcribe_youtube_video_example_gui/assets/55078043/96b8d19f-a95d-4d8b-a861-d09a632fad57)
+
 ### Legacy
 It only works in CUI for some reasons.
