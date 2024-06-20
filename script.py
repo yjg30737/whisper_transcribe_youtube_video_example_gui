@@ -3,6 +3,9 @@ import requests
 import subprocess
 from pathlib import Path
 
+ffmpeg_path = 'ffmpeg/ffmpeg.exe'
+os.environ["PATH"] += os.pathsep + os.path.join(os.path.dirname(__file__), os.path.dirname(ffmpeg_path))
+
 from openai import OpenAI
 from pydub import AudioSegment
 from pytube import YouTube
@@ -61,9 +64,10 @@ class GPTTranscribeWrapper:
             args['timestamp_granularities'] = timestamp_granularities
 
         result_obj_lst = []
+        result_audio_file_paths = split_the_audio(audio_file_path)
 
         next_starting_point = 0
-        for result_audio_file_path in split_the_audio(audio_file_path):
+        for result_audio_file_path in result_audio_file_paths:
             result_obj = {}
             with open(result_audio_file_path, 'rb') as audio_file:
                 args['file'] = audio_file
@@ -78,16 +82,13 @@ class GPTTranscribeWrapper:
                 segments = transcription.segments
 
                 language = transcription.language
-                # print(f"Transcription language: {language}")
                 result_obj['language'] = language
 
                 duration = transcription.duration
-                # print(f"Transcription duration: {duration}")
                 result_obj['duration'] = duration
                 result_obj['segments'] = []
 
                 for segment in segments:
-                    # [start --> end] text format
                     # segment['start'], segment['end'] should be 0.00 format
                     segment_obj = {
                         'start': round(segment['start']+next_starting_point, 2),
@@ -95,12 +96,10 @@ class GPTTranscribeWrapper:
                         'text': segment['text']
                     }
                     result_obj['segments'].append(segment_obj)
-                    # print(f"[{round(segment['start'], 2)} --> {round(segment['end'], 2)}] {segment['text']}")
-                next_starting_point += result_obj['segments'][-1]['end']
-                print('next_starting_point:', next_starting_point)
+                next_starting_point = result_obj['segments'][-1]['end']
             result_obj_lst.append(result_obj)
             Path(result_audio_file_path).unlink(missing_ok=True)
-        return result_obj_lst
+        return result_obj_lst, result_audio_file_paths
 
 def install_audio(youtube_video_url):
     youtube_video_content = YouTube(youtube_video_url)
@@ -118,7 +117,19 @@ def install_audio(youtube_video_url):
 
     return downloaded_file
 
+# For someone who wants to transcribe a specific part of the video
 def remove_trim(downloaded_file):
+    """
+        Trims a given video file from a specified start time for a certain duration and saves it as a new file.
+
+        Args:
+            downloaded_file (str): Path to the original video file.
+            start_time (int): Start time for trimming (in seconds).
+            duration (int): Duration of the video to trim (in seconds).
+
+        Returns:
+            str: Path to the trimmed video file.
+    """
     base_filename = os.path.splitext(os.path.basename(downloaded_file))[0]
     dst_filename = os.path.join(os.path.dirname(downloaded_file), f'{base_filename}(filtered).mp4')
     # trim file with ffmpeg
@@ -141,7 +152,7 @@ def remove_trim(downloaded_file):
 # dirname = Path('examples')
 # filenames = [str(file) for file in dirname.iterdir() if file.is_file()]
 # for filename in filenames:
-#     result_obj_lst = wrapper.transcribe_audio(filename, response_format='verbose_json', timestamp_granularities=['segment'])
+#     result_obj_lst, result_audio_file_paths = wrapper.transcribe_audio(filename, response_format='verbose_json', timestamp_granularities=['segment'])
 #     for result_obj in result_obj_lst:
 #         print(f"Transcription language: {result_obj['language']}")
 #         print(f"Transcription duration: {result_obj['duration']}")

@@ -1,12 +1,8 @@
 # Need to install numpy<2
 # If you already have it, you have to downgrade.
 
-import os
-import subprocess
-
-from pytube import YouTube
-
 import whisper
+from pytube import YouTube
 
 model = whisper.load_model("base")
 
@@ -25,19 +21,6 @@ def install_audio(youtube_video_url):
     downloaded_file = audio_stream.download(directory)
 
     return downloaded_file
-
-def remove_trim(downloaded_file):
-    base_filename = os.path.splitext(os.path.basename(downloaded_file))[0]
-    dst_filename = os.path.join(os.path.dirname(downloaded_file), f'{base_filename}(filtered).mp4')
-    # trim file with ffmpeg
-    ffmpeg_command = f'ffmpeg -ss 1924 -i "{downloaded_file}" -t 2515 "{dst_filename}"'
-    try:
-        subprocess.run(ffmpeg_command, shell=True, check=True)
-        print("FFmpeg command executed successfully.")
-        return dst_filename
-    except subprocess.CalledProcessError as e:
-        print("Error executing FFmpeg command:", e)
-    return dst_filename
 
 def transcribe_audio(dst_filename):
     result = model.transcribe(dst_filename, verbose=True)
