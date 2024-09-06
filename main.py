@@ -10,7 +10,7 @@ from apiWidget import ApiWidget
 from findPathWidget import FindPathWidget
 from loadingLbl import LoadingLabel
 from notifier import NotifierWidget
-from script import install_audio, GPTTranscribeWrapper, remove_trim
+from script import install_audio, GPTTranscribeWrapper, remove_trim, convert_to_srt
 
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)  # HighDPI support
@@ -46,7 +46,7 @@ class Thread2(QThread):
 
     def run(self):
         try:
-            result_obj_lst, result_audio_file_paths = self.__wrapper.transcribe_audio(self.__dst_filename, response_format='verbose_json', timestamp_granularities=['segment'])
+            result_obj_lst, result_audio_file_paths = self.__wrapper.transcribe_audio(self.__dst_filename, response_format='verbose_json' ,timestamp_granularities=['segment'])
             self.afterGenerated.emit(result_obj_lst)
         except Exception as e:
             raise Exception(e)
@@ -140,6 +140,10 @@ class MainWindow(QMainWindow):
         descriptionWidget = QWidget()
         descriptionWidget.setLayout(lay)
 
+        self.__convertToSrtBtn = QPushButton('Convert to SRT')
+        self.__convertToSrtBtn.clicked.connect(self.__convertToSrt)
+        self.__convertToSrtBtn.setEnabled(False)
+
         lay = QVBoxLayout()
         lay.addWidget(descriptionWidget)
         lay.addWidget(self.__browser)
@@ -153,6 +157,7 @@ class MainWindow(QMainWindow):
         lay.addWidget(self.__loadingLbl)
         lay.addWidget(resultGrpBox)
         lay.addWidget(self.__stopBtn)
+        lay.addWidget(self.__convertToSrtBtn)
 
         mainWidget = QWidget()
         mainWidget.setLayout(lay)
@@ -210,6 +215,7 @@ class MainWindow(QMainWindow):
         self.__fromLocalWidget.setEnabled(f)
         self.__fromYoutubeWidget.setEnabled(f)
         self.__stopBtn.setVisible(not f)
+        self.__convertToSrtBtn.setEnabled(f)
 
     def __toggleFromWhereRadioWidgets(self):
         self.__is_local = self.sender().text() == 'From local'
@@ -271,9 +277,8 @@ class MainWindow(QMainWindow):
             mostCommonUsedLanguage = Counter(self.__used_language_list).most_common(1)[0][0]
             self.__transcriptionLanguageLbl.setText(f'Transcription language (Most commonly used): {mostCommonUsedLanguage}')
             self.__transcriptionDurationLbl.setText(f'Transcription duration: {str(round(self.__duration, 2))} seconds')
-            self.__btn.setEnabled(True)
-            self.__fromLocalWidget.setEnabled(True)
-            self.__fromYoutubeWidget.setEnabled(True)
+
+            self.__toggleWidgets(True)
 
             if not self.isVisible():
                 self.__notifierWidget = NotifierWidget(informative_text='Transcription Complete 💻', detailed_text='Click this!')
@@ -311,6 +316,11 @@ class MainWindow(QMainWindow):
             e.ignore()
         else:
             return super().closeEvent(e)
+
+    def __convertToSrt(self):
+        original_filename = self.__fromLocalWidget.getLineEdit().text()
+        content = self.__browser.toPlainText().split('\n')
+        convert_to_srt(original_filename, content)
 
 
 if __name__ == "__main__":

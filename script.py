@@ -142,6 +142,36 @@ def remove_trim(downloaded_file):
         print("Error executing FFmpeg command:", e)
     return dst_filename
 
+
+def convert_to_srt(original_filename, content):
+    def seconds_to_srt_time(seconds):
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millis = int((seconds % 1) * 1000)
+        return f"{hours:02}:{minutes:02}:{secs:02},{millis:03}"
+
+    srt_content = ""
+    for idx, line in enumerate(content):
+        try:
+            # Extract the time and text parts
+            time_part = line.split("]")[0].replace("[", "").strip()
+            start_time, end_time = map(float, time_part.split(" --> "))
+            text = line.split("] ")[1].strip()
+
+            # Convert the time to SRT format and add to the SRT content
+            srt_content += f"{idx}\n"
+            srt_content += f"{seconds_to_srt_time(start_time)} --> {seconds_to_srt_time(end_time)}\n"
+            srt_content += f"{text}\n\n"
+            print(f"Start time: {start_time}, End time: {end_time}, Text: {text}")
+        except Exception as e:
+            print(f"Error processing line {idx}: {line} - {e}")
+
+    # Save as SRT file
+    srt_filename = original_filename.replace(".mp4", ".srt")
+    with open(srt_filename, 'w', encoding='utf-8') as file:
+        file.write(srt_content)
+
 # CUI usage
 
 # wrapper = GPTTranscribeWrapper(api_key=API_KEY)
