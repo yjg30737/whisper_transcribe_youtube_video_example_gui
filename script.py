@@ -91,12 +91,15 @@ class GPTTranscribeWrapper:
                 for segment in segments:
                     # segment['start'], segment['end'] should be 0.00 format
                     segment_obj = {
-                        'start': round(segment['start']+next_starting_point, 2),
-                        'end': round(segment['end']+next_starting_point, 2),
-                        'text': segment['text']
+                        'start': round(segment.start+next_starting_point, 2),
+                        'end': round(segment.end+next_starting_point, 2),
+                        'text': segment.text
                     }
                     result_obj['segments'].append(segment_obj)
-                next_starting_point = result_obj['segments'][-1]['end']
+                try:
+                    next_starting_point = result_obj['segments'][-1]['end']
+                except IndexError:
+                    pass
             result_obj_lst.append(result_obj)
             Path(result_audio_file_path).unlink(missing_ok=True)
         return result_obj_lst, result_audio_file_paths
